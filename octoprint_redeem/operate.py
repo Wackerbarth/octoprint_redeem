@@ -13,34 +13,55 @@ my_logger.addHandler(handler)
 
 class Operate:
   def __init__(self):
-    self.path = "/etc/redeem/"
+    self.system_path = "/usr/local/src/redeem/configs"
+    self.shared_path = "/usr/local/etc/redeem/"
+    self.localized_path = "/usr/local/etc/redeem/"
 
   def get_printers(self):
     """ Get a list of config files """
     import glob
     blacklist = ["default.cfg", "printer.cfg", "local.cfg"]
+    models = []
     try:
-      files = [
-          os.path.basename(f) for f in glob.glob(self.path + "*.cfg")
-          if os.path.isfile(os.path.join(self.path, f)) and os.path.basename(f) not in blacklist
+      additional_models = [
+          os.path.basename(f) for f in glob.glob(os.path.join(self.localized_path, "*.cfg"))
+          if os.path.isfile(os.path.join(self.localized_path, f))
+          and os.path.basename(f) not in blacklist
       ]
-      return files
+      models.append(additional_models)
     except OSError:
-      return []
+      continue
+    try:
+      additional_models = [
+          os.path.basename(f) for f in glob.glob(os.path.join(self.shared_path, "*.cfg")) if
+          os.path.isfile(os.path.join(self.shared_path, f)) and os.path.basename(f) not in blacklist
+      ]
+      models.append(additional_models)
+    except OSError:
+      continue
+    try:
+      additional_models = [
+          os.path.basename(f) for f in glob.glob(os.path.join(self.system_path, "*.cfg")) if
+          os.path.isfile(os.path.join(self.system_path, f)) and os.path.basename(f) not in blacklist
+      ]
+      models.append(additional_models)
+    except OSError:
+      continue
+    # now eliminate duplicates and sort result
+    return list(set(models)).sort()
 
   def get_default_printer(self):
     """ Get the current printer """
-    real = os.path.realpath(self.path + "printer.cfg")
+    real = os.path.realpath(os.path.join(self.localized_path, "printer.cfg"))
     return os.path.basename(real)
 
   def choose_printer(self, filename):
     """ Choose which printer config should be used """
-    path = "/etc/redeem/"
     whitelist = self.get_printers()
     if filename not in whitelist:
       return False
-    filename = os.path.join(path, filename)
-    linkname = os.path.join(path, "printer.cfg")
+    filename = os.path.join(self.localized_path, filename)
+    linkname = os.path.join(self.localized_path, "printer.cfg")
     # Only unlink if exists
     if os.path.isfile(linkname):
       os.unlink(linkname)
@@ -51,7 +72,7 @@ class Operate:
     return False
 
   def delete_printer(self, filename):
-    full = self.path + filename
+    full = os.path.join(self.localized_path, filename)
     if os.path.isfile(full):
       os.unlink(full)
       return True
@@ -67,7 +88,7 @@ class Operate:
       with open(filename, "r+") as f:
         return f.read()
     except IOError as e:
-      return 'Error: Cannot open ' + filename
+      return 'Error: Cannot open {}'.format(filename)
 
   def save_local(self, data, filename):
     logging.info(data)
@@ -91,7 +112,7 @@ class Operate:
 
 if __name__ == "__main__":
   o = Operate()
-  print o.get_branches()
+  print o.get_list_of_branches()
   print o.set_current_branch("develop")
   print o.get_current_branch()
   print o.current_branch_upgradable()

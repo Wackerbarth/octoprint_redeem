@@ -26,14 +26,21 @@ class RedeemPlugin(octoprint.plugin.TemplatePlugin, octoprint.plugin.SettingsPlu
 
   #~~ StartupPlugin
   def on_after_startup(self):
-    self.path = self._settings.get(["path"])
+    self.system_path = self._settings.get(["system_path"])
+    self.shared_path = self._settings.get(["shared_path"])
+    self.localized_path = self._settings.get(["localized_path"])
 
   #~~ SettingsPlugin
   def on_settings_save(self, data):
     super(RedeemPlugin, self).on_settings_save(data)
 
   def get_settings_defaults(self):
-    return dict(path="/etc/redeem/", default_profile=None, debug_logging=False)
+    return dict(
+        system_path="/usr/local/src/redeem/configs",
+        shared_path="/usr/local/etc/redeem/",
+        localized_path="/usr/local/etc/redeem/",
+        default_profile=None,
+        debug_logging=False)
 
   #~~ AssetPlugin API
   def get_assets(self):
@@ -42,7 +49,7 @@ class RedeemPlugin(octoprint.plugin.TemplatePlugin, octoprint.plugin.SettingsPlu
   #~~ SimpleApiPlugin API
   def get_api_commands(self):
     return dict(
-        get_profiles=[],
+        get_list_of_profiles=[],
         use_profile=[],
         delete_profile=[],
         restart_redeem=[],
@@ -50,7 +57,7 @@ class RedeemPlugin(octoprint.plugin.TemplatePlugin, octoprint.plugin.SettingsPlu
         redeem_is_current_branch_upgradable=[],
         redeem_get_current_branch=[],
         redeem_set_current_branch=[],
-        redeem_get_branches=[],
+        redeem_get_list_of_branches=[],
         reset_thermistor_alarm=[],
         reset_endstop_alarm=[],
         get_profile=[],
@@ -58,7 +65,7 @@ class RedeemPlugin(octoprint.plugin.TemplatePlugin, octoprint.plugin.SettingsPlu
 
   def on_api_command(self, command, data):
     o = Operate()
-    if command == "get_profiles":
+    if command == "get_list_of_profiles":
       printers = o.get_printers()
       default = o.get_default_printer()
       profiles = {}
@@ -103,8 +110,8 @@ class RedeemPlugin(octoprint.plugin.TemplatePlugin, octoprint.plugin.SettingsPlu
       branchname = data["key"]
       o.set_current_branch(branchname)
       return flask.jsonify(ok=1)
-    elif command == "redeem_get_branches":
-      data = o.get_branches()
+    elif command == "redeem_get_list_of_branches":
+      data = o.get_list_of_branches()
       return flask.jsonify(data=data)
     elif command == "reset_thermistor_alarm":
       o.reset_thermistor_alarm()
@@ -185,7 +192,7 @@ class RedeemPlugin(octoprint.plugin.TemplatePlugin, octoprint.plugin.SettingsPlu
 
     try:
       from_file = flask.request.values[input_upload_path]
-      to_file = "/etc/redeem/{}.cfg".format(profile_name)
+      to_file = "/usr/local/etc/redeem/{}.cfg".format(profile_name)
       self._logger.info("Renaming {} to {}".format(from_file, to_file))
       os.rename(from_file, to_file)
     except IOError as e:
@@ -269,7 +276,7 @@ def _check_config_file(config_file):
   import logging
 
   default = ConfigParser.SafeConfigParser()
-  default.readfp(open("/etc/redeem/default.cfg"))
+  default.readfp(open("/usr/local/src/redeem/configs/default.cfg"))
 
   new = ConfigParser.SafeConfigParser()
   new.readfp(open(config_file))
