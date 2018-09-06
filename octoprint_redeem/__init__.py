@@ -121,11 +121,14 @@ class RedeemPlugin(octoprint.plugin.TemplatePlugin, octoprint.plugin.SettingsPlu
       return flask.jsonify(ok=1)
     elif command == "get_profile":
       filename = data["key"]
-      filename_path = os.path.join(self._settings.get(["path"]), filename)
+      if filename == "default.cfg":
+        filename_path = os.path.join(self._settings.get(["system_path"]), "default.cfg")
+      else
+        filename_path = os.path.join(self._settings.get(["localized_path"]), filename)
       data = o.get_config_file(filename_path)
       return flask.jsonify(data=data)
     elif command == "save_local":
-      filename = os.path.join(self._settings.get(["path"]), "local.cfg")
+      filename = os.path.join(self._settings.get(["localized_path"]), "local.cfg")
       o.save_local(data["data"], filename)
       return flask.jsonify(ok=1)
     else:
@@ -265,7 +268,7 @@ class RedeemPlugin(octoprint.plugin.TemplatePlugin, octoprint.plugin.SettingsPlu
 
     return [(r"/download/(.*)", LargeResponseHandler,
              dict(
-                 path=self._settings.get(["path"]),
+                 path=self._settings.get(["localized_path"]),
                  as_attachment=True,
                  path_validation=path_validation_factory(
                      lambda path: not is_hidden_path(path), status_code=404)))]
