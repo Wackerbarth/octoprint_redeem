@@ -123,7 +123,7 @@ class RedeemPlugin(octoprint.plugin.TemplatePlugin, octoprint.plugin.SettingsPlu
       filename = data["key"]
       if filename == "default.cfg":
         filename_path = os.path.join(self._settings.get(["system_path"]), "default.cfg")
-      else
+      else:
         filename_path = os.path.join(self._settings.get(["localized_path"]), filename)
       data = o.get_config_file(filename_path)
       return flask.jsonify(data=data)
