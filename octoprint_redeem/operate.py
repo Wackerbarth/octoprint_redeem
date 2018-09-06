@@ -30,7 +30,7 @@ class Operate:
       ]
       models.append(additional_models)
     except OSError:
-      continue
+      pass
     try:
       additional_models = [
           os.path.basename(f) for f in glob.glob(os.path.join(self.shared_path, "*.cfg")) if
@@ -38,7 +38,7 @@ class Operate:
       ]
       models.append(additional_models)
     except OSError:
-      continue
+      pass
     try:
       additional_models = [
           os.path.basename(f) for f in glob.glob(os.path.join(self.system_path, "*.cfg")) if
@@ -46,7 +46,7 @@ class Operate:
       ]
       models.append(additional_models)
     except OSError:
-      continue
+      pass
     # now eliminate duplicates and sort result
     return list(set(models)).sort()
 
